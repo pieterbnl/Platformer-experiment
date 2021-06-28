@@ -8,7 +8,7 @@ final static float MOVE_SPEED = 5; // 5 pixel per frame
 final static float SPRITE_SCALE = 50.0/128; // scaling original image of 128 pixels to 50 pixels
 final static float SPRITE_SIZE = 50;
 final static float GRAVITY = 0.6;
-
+final static float JUMP_SPEED = 14;
 
 // declare global variables
 Sprite player; // sprite for player
@@ -18,10 +18,10 @@ ArrayList<Sprite> platform;
 
 // setup initial window
 void setup() {
-    size(800, 600);
+    size(1500, 600);
     imageMode(CENTER); // set's sprite center to center
     
-    player = new Sprite("data/player.png", 1.0, 400, 300);
+    player = new Sprite("data/player.png", 1.0, 600, 600);
     player.change_x = 0; // give player a standard velocity in x direction
     player.change_y = -10; // give player a standard velocity in y direction (i.e.: gravity)
     
@@ -32,7 +32,7 @@ void setup() {
     crate = loadImage("data/crate.png");
     // snow = loadImage("data/snow.png");
     tile = loadImage("tile.png");
-    createPlatform("data/map.csv"); // create platform with all images according the configuration as set in the map.csv file
+    createPlatform("data/map_hessel.csv"); // create platform with all images according the configuration as set in the map.csv file
 }
 
 // draws on screen (60 fps) 
@@ -46,6 +46,20 @@ void draw() {
  
     for(Sprite s: platform) // draw platform
       s.display();
+}
+
+
+// jumping method - returns whether the sprite is on one of the platform
+// note: player can only jump when he is on platform and there's no multi-jumping
+public boolean isOnPlatform(Sprite s, ArrayList<Sprite> walls) {
+  s.center_y += 5; // move sprite 5 pixels down (note: y is inverted, hence +)
+  ArrayList<Sprite> col_list = checkCollisionList(s, walls); // check for collisions: computer collision list with platform
+  s.center_y -= 5; // restore sprite original position by moving 5 pixels up again
+  if(col_list.size() > 0) { // if collision list is not empty, return true, otherwise return false 
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // resolve collisions between sprites (for example: between the player sprite and platform sprites)
@@ -120,7 +134,6 @@ public ArrayList<Sprite> checkCollisionList(Sprite s, ArrayList<Sprite> list){
   return collision_list;
 }
 
-
 // takes filename and create platform
 void createPlatform(String filename) {
   String[] lines = loadStrings(filename); // takes css file and loads into an array (lines), with first element representing the entire first row of the css file which is a String
@@ -164,9 +177,9 @@ void keyPressed(){
   else if(keyCode == LEFT) {
     player.change_x = -MOVE_SPEED;
   }
-  else if(keyCode == UP) {
-    player.change_y = -MOVE_SPEED;
-  }
+  //else if(keyCode == UP) {
+  //  player.change_y = -MOVE_SPEED;
+  //}
   else if(keyCode == DOWN) {
     player.change_y = MOVE_SPEED;
   }
@@ -180,9 +193,12 @@ void keyReleased(){
   else if(keyCode == LEFT) {
     player.change_x = 0;
   }
-  else if(keyCode == UP) {
-    player.change_y = 0;
+  else if(key == 'a' && isOnPlatform(player, platform)) {; // if jump key is pressed AND sprite is on platform: sprite.change_y = -JUMP_SPEED
+    player.change_y = -JUMP_SPEED;
   }
+  //else if(keyCode == UP) {
+  //  player.change_y = 0;
+  //}
   else if(keyCode == DOWN) {
     player.change_y = 0;
   }

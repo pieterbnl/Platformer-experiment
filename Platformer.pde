@@ -10,11 +10,16 @@ final static float SPRITE_SIZE = 50;
 final static float GRAVITY = 0.6;
 final static float JUMP_SPEED = 14;
 
+final static int NEUTRAL_FACING = 0;
+final static int RIGHT_FACING = 1;
+final static int LEFT_FACING = 2;
+
 // declare global variables
 Sprite player; // sprite for player
 // PImage snow, crate, red_brick, brown_brick;
-PImage tile, crate, red_brick, brown_brick;
-ArrayList<Sprite> platform;
+PImage tile, crate, red_brick, brown_brick, coin;
+ArrayList<Sprite> platform; // array list for all platform sprites
+ArrayList<Sprite> coins; // array list for all coin sprites
 
 // setup initial window
 void setup() {
@@ -25,27 +30,36 @@ void setup() {
     player.change_x = 0; // give player a standard velocity in x direction
     player.change_y = -10; // give player a standard velocity in y direction (i.e.: gravity)
     
-    platform = new ArrayList<Sprite>(); // will hold all sprites to generate the platform
+    platform = new ArrayList<Sprite>(); // initialize array that will hold all sprites to generate the platform
+    coins = new ArrayList<Sprite>(); // initialize array that will hold all coin sprites - note its initialized as Sprite, but can hold any subclasses
     
+    coin = loadImage("data/gold1.png");
     red_brick = loadImage("data/red_brick.png");
     brown_brick = loadImage("data/brown_brick.png");
     crate = loadImage("data/crate.png");
     // snow = loadImage("data/snow.png");
     tile = loadImage("tile.png");
-    createPlatform("data/map_hessel.csv"); // create platform with all images according the configuration as set in the map.csv file
+    createPlatform("data/map.csv"); // create platform with all images according the configuration as set in the map.csv file
 }
 
 // draws on screen (60 fps) 
 void draw() {
-    background(255); // drawing white blackground
+  background(255); // drawing white blackground
+  
+  player.display(); // draw player sprite
+   
+  // player.update();  // update player sprite position
+  resolvePlatformCollisions(player, platform);
+   
+  // draw platform
+  for(Sprite s: platform) 
+    s.display();
     
-    player.display(); // draw player sprite
- 
-    // player.update();  // update player sprite position
-    resolvePlatformCollisions(player, platform);
- 
-    for(Sprite s: platform) // draw platform
-      s.display();
+  // draw coins
+  for(Sprite c: coins) { // draw platform
+    c.display(); // display coin
+    ((AnimatedSprite)c).updateAnimation(); // need to cast down to be able to call updateAnimation to animate the coin
+  }
 }
 
 
@@ -164,6 +178,12 @@ void createPlatform(String filename) {
         s.center_x = SPRITE_SIZE/2 + col * SPRITE_SIZE;
         s.center_y = SPRITE_SIZE/2 + row * SPRITE_SIZE;
         platform.add(s);
+      }
+       else if(values[col].equals("5")) { // create a coin
+        Coin c = new Coin(coin, SPRITE_SCALE);
+        c.center_x = SPRITE_SIZE/2 + col * SPRITE_SIZE;
+        c.center_y = SPRITE_SIZE/2 + row * SPRITE_SIZE;
+        coins.add(c); // add to coins array list
       }
     }
    } 

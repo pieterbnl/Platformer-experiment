@@ -1,19 +1,23 @@
-PImage img;
-float center_x, center_y; // float is default type for processing
-float change_x, change_y; // float is default type for processing
+/** Experimenting with the creation of a platformer, using processing (processing.org).
+ @author Pieter Beernink
+ @version 1.0
+ @since 1.0
+ */
 
+// declare global variables
+Sprite sprite;
+
+// setup initial window
 void setup() {
     size(800, 600);
-    img = loadImage("data/dj.png"); // initializing image
-    center_x = 100;
-    center_y = 300;
-    change_x = 5;
-    change_y = 2;
+    sprite = new Sprite("data/dj.png", 1.0, 100, 300);
+    sprite.change_x = 5; // give image a velocity to move
 }
 
+// draws on screen (60 fps) 
 void draw() {
     background(255); // drawing white blackground
-    image(img, center_x, center_y); // draw image
-    center_x += change_x; // update position of object
-    center_y += change_y; 
+    
+    sprite.display();
+    sprite.update(); 
 }

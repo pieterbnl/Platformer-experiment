@@ -3,8 +3,8 @@ public class Sprite {
   // Declaring variables
   // Note: by convention in processing, encapsulation is ignored here to keep things simple
   PImage image;
-  float center_x, center_y; // note: float is default type for processing
-  float change_x, change_y; 
+  float center_x, center_y; // variable that can be used to set the (initial) position of a sprite
+  float change_x, change_y; // variable that can be used to change direction of a sprite
   float w, h; // for setting height and width of sprite (modifiable by a scale factor)
   
   // Constructor to initialize variables
@@ -38,14 +38,14 @@ public class Sprite {
     image(image, center_x, center_y, w, h); // draw image
   }
   
-  // update position of image
+  // update position of image by adding change in (x, y) direction to current (x, y) position
   public void update() {
     center_x += change_x;
     center_y += change_y;
   }
   
-  
-  // methods for correcting a sprite position uppon collission detection  
+  // methods for correcting a sprite position uppon collission detection
+  // note, width and height are divided by 2 to get the center point of the sprite
   public void setLeft(float left) {
     center_x = left + w/2;
   }

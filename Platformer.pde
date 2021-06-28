@@ -14,12 +14,18 @@ final static int NEUTRAL_FACING = 0;
 final static int RIGHT_FACING = 1;
 final static int LEFT_FACING = 2;
 
+
+final static float WIDTH = SPRITE_SIZE * 16; // width of window
+final static float HEIGHT = SPRITE_SIZE * 12; // height of window
+final static float GROUND_LEVEL = HEIGHT - SPRITE_SIZE;// set ground level of where player is standing
+
 // declare global variables
 Sprite player; // sprite for player
 // PImage snow, crate, red_brick, brown_brick;
-PImage tile, crate, red_brick, brown_brick, coin;
+PImage tile, crate, red_brick, brown_brick, coin, spider;
 ArrayList<Sprite> platform; // array list for all platform sprites
 ArrayList<Sprite> coins; // array list for all coin sprites
+Enemy enemy; // declaring enemy
 
 // setup initial window
 void setup() {
@@ -33,13 +39,17 @@ void setup() {
     platform = new ArrayList<Sprite>(); // initialize array that will hold all sprites to generate the platform
     coins = new ArrayList<Sprite>(); // initialize array that will hold all coin sprites - note its initialized as Sprite, but can hold any subclasses
     
+    // initialize inital images
     coin = loadImage("data/gold1.png");
+    coin = loadImage("data/spider_walk_right1.png");
     red_brick = loadImage("data/red_brick.png");
     brown_brick = loadImage("data/brown_brick.png");
     crate = loadImage("data/crate.png");
     // snow = loadImage("data/snow.png");
     tile = loadImage("tile.png");
-    createPlatform("data/map.csv"); // create platform with all images according the configuration as set in the map.csv file
+    
+    // create platform level with all images according the configuration as set in the map.csv file
+    createPlatform("data/map.csv"); 
 }
 
 // draws on screen (60 fps) 
@@ -60,6 +70,17 @@ void draw() {
     c.display(); // display coin
     ((AnimatedSprite)c).updateAnimation(); // need to cast down to be able to call updateAnimation to animate the coin
   }
+  
+  // to be added - coin collection method when coliding with a coin & show score 
+  //collectCoins();
+  //fill(255, 0, 0);
+  //textSize(32);
+  //text("Coin:" + numCoins, 50, 50);
+  
+  enemy.display(); // display enemy
+  enemy.update(); // make enemy move
+  enemy.updateAnimation(); // animate enemy
+  
 }
 
 
@@ -183,7 +204,22 @@ void createPlatform(String filename) {
         Coin c = new Coin(coin, SPRITE_SCALE);
         c.center_x = SPRITE_SIZE/2 + col * SPRITE_SIZE;
         c.center_y = SPRITE_SIZE/2 + row * SPRITE_SIZE;
-        coins.add(c); // add to coins array list
+        coins.add(c); // add to coins array
+      }
+      else if(values[col].equals("6")) { // create a spider
+      
+        // setting boundries for this enemy sprite
+        // note: currently not ideal, boundries are to be 'hard coded' depending on the map design
+        // i.e. with changing map design, the boundries have to possibly be adjusted
+        float bLeft = col * SPRITE_SIZE;
+        float bRight = bLeft + 4 * SPRITE_SIZE;
+        
+        // initiate enemy object
+        enemy = new Enemy(spider, 50/72.0, bLeft, bRight); // scaling down spider image with 72pixels width to 50pixels
+        
+        // setting enemy sprite position
+        enemy.center_x = SPRITE_SIZE/2 + col * SPRITE_SIZE;
+        enemy.center_y = SPRITE_SIZE/2 + row * SPRITE_SIZE;
       }
     }
    } 

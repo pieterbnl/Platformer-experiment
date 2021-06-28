@@ -18,19 +18,29 @@ public class Sprite {
     change_y = 0;
   }
   
-  public Sprite(String filename, float scale) {
+   public Sprite(String filename, float scale) {
     this(filename, scale, 0, 0);
+  }
+  
+  // Another Sprite constructor, that can be used to load an image just once, which is usefull for creating the platform
+  public Sprite(PImage img, float scale) {
+    image = img;
+    w = image.width * scale;
+    h = image.height * scale;
+    center_x = 0;
+    center_y = 0;
+    change_x = 0;
+    change_y = 0;
   }
   
   // display image
   public void display() {
-    image(image, center_x, center_y); // draw image
+    image(image, center_x, center_y, w, h); // draw image
   }
   
   // update position of image
   public void update() {
     center_x += change_x;
     center_y += change_y;
-  }
-  
+  }  
 }

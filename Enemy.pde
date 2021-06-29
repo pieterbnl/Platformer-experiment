@@ -1,4 +1,4 @@
-// Class for creating an enemy sprite
+// Class for creating an animated enemy sprite
 // Extending from AnimatedSprite to inherit
 public class Enemy extends AnimatedSprite {
   

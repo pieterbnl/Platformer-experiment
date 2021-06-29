@@ -78,5 +78,4 @@ public class Sprite {
   public float getBottom() {
     return center_y + h/2;
   }
- 
- }
+}

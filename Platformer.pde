@@ -1,4 +1,6 @@
-/** Experimenting with the creation of a platformer, using processing (processing.org).
+/** Experimenting with the creation of a platformer 
+following Long Nguyen (LongNguyen) computer science class course 
+with use of processing (processing.org) 
  @author Pieter Beernink
  @version 1.0
  @since 1.0
@@ -18,28 +20,55 @@ final static float WIDTH = SPRITE_SIZE * 16; // width of window
 final static float HEIGHT = SPRITE_SIZE * 12; // height of window
 final static float GROUND_LEVEL = HEIGHT - SPRITE_SIZE;// set ground level of where player is standing
 
+final static float RIGHT_MARGIN = 400;
+final static float LEFT_MARGIN = 60;
+final static float VERTICAL_MARGIN = 40;
+
 // declare global variables
-Sprite player; // sprite for player
-// PImage snow, crate, red_brick, brown_brick;
-PImage tile, crate, red_brick, brown_brick, coin, spider;
+Player player; // declaring player
+PImage tile, crate, red_brick, brown_brick, coin, spider, p; 
 ArrayList<Sprite> platform; // array list for all platform sprites
 ArrayList<Sprite> coins; // array list for all coin sprites
 Enemy enemy; // declaring enemy
 
+// keep track if game is still ongoing
+boolean isGameOver;
+
+// set player's initial number of coins
+int numCoins;
+
+// variables to keep track of the top left corner of the visible part of the platform when the user is scrolling/moving
+// when the player is moving, it's actually the platform that's moving and not the view
+// the platform origin (0,0) is moved relatively to the view (view_x, view_y) point, using a 'translate' method
+// to handle this, a boundary and margin is set
+// as long as the player movies within the boundary, no scrolling is inititated
+// as soon as the player crosses the boundary, into the margin, scrolling is initiated towards the player's direction
+// as such compensating fro the player movement and ensuring he stays within the boundary
+// if player leaves boundary: compute new view_x, view_y to maintain margin translate(-view_x, -view_y)
+// right boundary = view_x + width - right margin
+// bottom boundary = view_y + height - bottom margin
+// note: text on the screen, such as score, needs to be moved relative to view_x and view_y as well to make sure it scroll's along with the player
+float view_x; 
+float view_y; 
+
+
 // setup initial window
 void setup() {
-    size(1500, 600);
-    imageMode(CENTER); // set's sprite center to center
+    size(800, 600); // set window size
+    imageMode(CENTER); // sets sprite center to the center of the image
     
-    player = new Sprite("data/player.png", 1.0, 600, 600);
-    player.change_x = 0; // give player a standard velocity in x direction
-    player.change_y = -10; // give player a standard velocity in y direction (i.e.: gravity)
-    
+    // create player object
+    PImage p = loadImage("player.png");
+    player = new Player(p, 0.8); // create Player object with provision of player image (p) and scaling (0.8)
+    player.center_x = 100;
+    player.setBottom(GROUND_LEVEL); // set bottom of player to be on the bottom of ground level
+           
     platform = new ArrayList<Sprite>(); // initialize array that will hold all sprites to generate the platform
     coins = new ArrayList<Sprite>(); // initialize array that will hold all coin sprites - note its initialized as Sprite, but can hold any subclasses
-    // numCoins = 0;
-    
-    // initialize inital images
+    numCoins = 0;
+    isGameOver = false;
+        
+    // initialize inital sprites
     coin = loadImage("data/gold1.png");
     spider = loadImage("data/spider_walk_right1.png");
     red_brick = loadImage("data/red_brick.png");
@@ -49,37 +78,125 @@ void setup() {
     tile = loadImage("tile.png");
     
     // create platform level with all images according the configuration as set in the map.csv file
-    createPlatform("data/map.csv"); 
+    createPlatform("data/map.csv");
+    
+    view_x = 0; 
+    view_y = 0;
 }
 
 // draws on screen (60 fps) 
 void draw() {
-  background(255); // drawing white blackground
+  background(255); // drawing white blackground  
+  scroll(); // needs to be first method to be called
   
-  player.display(); // draw player sprite
-   
-  // player.update();  // update player sprite position
-  resolvePlatformCollisions(player, platform);
-   
-  // draw platform
+  // display all objects
+  displayAll(); 
+  
+  // update all objects (if game is not over)
+  if(!isGameOver) {
+    updateAll(); 
+    collectCoins();
+    checkDeath();
+  }
+}
+
+void displayAll() {
+  // draw/display platform
   for(Sprite s: platform) 
     s.display();
     
-  // draw coins
-  for(Sprite c: coins) { // draw platform
-    c.display(); // display coin
-    ((AnimatedSprite)c).updateAnimation(); // need to cast down to be able to call updateAnimation to animate the coin
+  // draw/display coins
+  for(Sprite c: coins) {
+    c.display();
   }
   
-  // to be added - coin collection method when coliding with a coin & show score 
-  //collectCoins();
-  //fill(255, 0, 0);
-  //textSize(32);
-  //text("Coin:" + numCoins, 50, 50);
+  // display player & enemy sprite
+  player.display();
+  enemy.display();
   
-  enemy.display(); // display enemy
-  enemy.update(); // make enemy move
-  enemy.updateAnimation(); // animate enemy  
+  // present player coin score & lives 
+  fill(255, 0, 0);
+  textSize(32);
+  text("Coin:" + numCoins, view_x + 50, view_y + 50);
+  text("Lives:" + player.lives, view_x + 50, view_y + 100);
+  
+  if(isGameOver) {
+    fill(0,0,255);
+    text("GAME OVER!", view_x + width/2 - 100, view_y + height/2);
+    if(player.lives == 0)
+      text("You lose!", view_x + width/2 - 100, view_y + height/2 + 50);
+    else
+      text("You win!", view_x + width/2 - 100, view_y + height/2 + 50);
+    text("Press SPACE to restart", view_x + width/2 - 100, view_y + height/2 + 100);
+  }   
+}
+
+// update objects
+void updateAll() {
+  player.updateAnimation(); // animate player's sprite
+  resolvePlatformCollisions(player, platform);
+  enemy.update(); // updates enemy's sprite position
+  enemy.updateAnimation(); // animate enemy's sprite
+  
+  // draw coins
+  for(Sprite c: coins) { 
+    ((AnimatedSprite)c).updateAnimation(); // need to cast down to be able to call updateAnimation to animate the coin
+  }
+}
+
+// Check when player dies
+void checkDeath() {
+  boolean collideEnemy = checkCollision(player, enemy); // player touches enemy
+  boolean fallOffCliff = player.getBottom() > GROUND_LEVEL; // player falls
+  if(collideEnemy || fallOffCliff) {
+    player.lives--;
+    if(player.lives==0) { // player has no more lives, game over
+      isGameOver = true;
+    } else { // player still has lives, reset game
+      player.center_x = 100;
+      player.setBottom(GROUND_LEVEL);
+    }
+  }
+}
+
+// Check when player collects coins
+void collectCoins() {
+  ArrayList<Sprite> coin_list = checkCollisionList(player, coins);
+  if(coin_list.size() > 0) {
+    for(Sprite coin: coin_list) {
+      numCoins++;
+      coins.remove(coin);
+    }
+  }
+  
+  // collect all coins to win
+  if(coins.size() == 0) {
+    isGameOver = true;
+  }
+}
+  
+void scroll() {
+  float right_boundary = view_x + width - RIGHT_MARGIN;
+  if(player.getRight() > right_boundary) {
+    view_x += player.getRight() - right_boundary;
+  }
+  
+  float left_boundary = view_x + LEFT_MARGIN;
+  if(player.getLeft() < left_boundary) {
+    view_x -= left_boundary - player.getLeft();
+  }
+  
+  float bottom_boundary = view_x + height - VERTICAL_MARGIN;
+  if(player.getBottom() > bottom_boundary) {
+    view_y += player.getBottom() - bottom_boundary;
+  }
+  
+  float top_boundary = view_y + VERTICAL_MARGIN;
+  if(player.getTop() < top_boundary) {
+    view_y -= top_boundary - player.getTop();
+  }
+  
+  translate(-view_x, -view_y);
 }
 
 
@@ -224,7 +341,7 @@ void createPlatform(String filename) {
    } 
 }
 
-// called when a key is pressed, initializes sprite movement
+// called when a key is pressed; initializes sprite movement
 void keyPressed(){
   if(keyCode == RIGHT) {
     player.change_x = MOVE_SPEED;
@@ -232,15 +349,15 @@ void keyPressed(){
   else if(keyCode == LEFT) {
     player.change_x = -MOVE_SPEED;
   }
-  //else if(keyCode == UP) {
-  //  player.change_y = -MOVE_SPEED;
-  //}
-  else if(keyCode == DOWN) {
-    player.change_y = MOVE_SPEED;
+  else if(key == 'a' && isOnPlatform(player, platform)) {; 
+    player.change_y = -JUMP_SPEED;
+  }
+  else if(isGameOver && key == ' ') {
+    setup();
   }
 }
 
-// called when a key is released, stops sprite movement
+// called when a key is released; stops sprite movement
 void keyReleased(){
     if(keyCode == RIGHT) {
     player.change_x = 0;
@@ -248,14 +365,4 @@ void keyReleased(){
   else if(keyCode == LEFT) {
     player.change_x = 0;
   }
-  else if(key == 'a' && isOnPlatform(player, platform)) {; // if jump key is pressed AND sprite is on platform: sprite.change_y = -JUMP_SPEED
-    player.change_y = -JUMP_SPEED;
-  }
-  //else if(keyCode == UP) {
-  //  player.change_y = 0;
-  //}
-  else if(keyCode == DOWN) {
-    player.change_y = 0;
-  }
-  
 }

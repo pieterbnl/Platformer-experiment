@@ -14,7 +14,6 @@ final static int NEUTRAL_FACING = 0;
 final static int RIGHT_FACING = 1;
 final static int LEFT_FACING = 2;
 
-
 final static float WIDTH = SPRITE_SIZE * 16; // width of window
 final static float HEIGHT = SPRITE_SIZE * 12; // height of window
 final static float GROUND_LEVEL = HEIGHT - SPRITE_SIZE;// set ground level of where player is standing
@@ -38,10 +37,11 @@ void setup() {
     
     platform = new ArrayList<Sprite>(); // initialize array that will hold all sprites to generate the platform
     coins = new ArrayList<Sprite>(); // initialize array that will hold all coin sprites - note its initialized as Sprite, but can hold any subclasses
+    // numCoins = 0;
     
     // initialize inital images
     coin = loadImage("data/gold1.png");
-    coin = loadImage("data/spider_walk_right1.png");
+    spider = loadImage("data/spider_walk_right1.png");
     red_brick = loadImage("data/red_brick.png");
     brown_brick = loadImage("data/brown_brick.png");
     crate = loadImage("data/crate.png");
@@ -79,8 +79,7 @@ void draw() {
   
   enemy.display(); // display enemy
   enemy.update(); // make enemy move
-  enemy.updateAnimation(); // animate enemy
-  
+  enemy.updateAnimation(); // animate enemy  
 }
 
 
